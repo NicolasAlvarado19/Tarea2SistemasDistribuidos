@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import csv, time, sys, json, pathlib, argparse
 from urllib import request, error
 from itertools import islice
@@ -21,7 +20,7 @@ def main():
 
     ruta = pathlib.Path(args.csv)
     if not ruta.exists():
-        print(f"❌ No existe {ruta}")
+        print(f" No existe {ruta}")
         sys.exit(1)
 
     total_previsto = sum(1 for _ in open(ruta, encoding="utf-8")) - 1  # sin header
@@ -59,7 +58,7 @@ def main():
             # progreso simple
             print(f"\rProgreso: {exito + fallo}/{total_previsto if total_previsto>0 else '?'} ok={exito} err={fallo}", end="")
             time.sleep(args.sleep)
-    print("\n✅ Terminado. Éxitos:", exito, "| Fallos:", fallo)
+    print("\n Terminado. Éxitos:", exito, "| Fallos:", fallo)
 
-if __name__ == "__main__": ##########
+if __name__ == "__main__":
     main()

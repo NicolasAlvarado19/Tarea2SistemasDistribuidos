@@ -1,12 +1,3 @@
-"""
-Script para preparar el dataset de Yahoo! Answers
-- Lee test.csv (formato Kaggle sin encabezados)
-- Limpia nulos y longitudes extremas
-- Selecciona hasta 10,000 ejemplos balanceados por clase (≈1,000 por clase)
-- Genera datos con columnas: pregunta, respuesta
-- Guarda en: datos/preguntas_10k.csv
-"""
-
 import os
 import pandas as pd
 
@@ -22,9 +13,9 @@ SEED = 42               # para reproducibilidad
 
 
 def dataset():
-    print("📊 Cargando dataset de Yahoo! Answers...")
+    print("Cargando dataset de Yahoo! Answers...")
     if not os.path.exists(RUTA_ENTRADA):
-        raise SystemExit(f"❌ No se encontró '{RUTA_ENTRADA}'. Copia aquí tu test.csv de Kaggle.")
+        raise SystemExit(f"No se encontró '{RUTA_ENTRADA}'. Copia aquí tu test.csv de Kaggle.")
 
     # Kaggle: sin encabezados → definimos nombres
     df = pd.read_csv(
@@ -32,7 +23,7 @@ def dataset():
         names=["clase", "titulo", "contenido", "mejor_respuesta"],
         encoding="utf-8"
     )
-    print(f"✅ Dataset cargado: {len(df)} filas")
+    print(f"Dataset cargado: {len(df)} filas")
 
     # Limpieza básica
     antes = len(df)
@@ -45,10 +36,10 @@ def dataset():
     # Filtro por longitud
     antes = len(df)
     df = df[(df["pregunta"].str.len() >= MIN_LEN) & (df["pregunta"].str.len() <= MAX_LEN)]
-    print(f"✂️  Filtrado por longitud: {antes - len(df)} removidos (quedan {len(df)})")
+    print(f" Filtrado por longitud: {antes - len(df)} removidos (quedan {len(df)})")
 
     # Balanceo por clase (1..10)
-    print("🎲 Muestreando por clase...")
+    print("Muestreando por clase...")
     partes = []
     for clase in range(1, 11):
         grupo = df[df["clase"] == clase]
@@ -60,7 +51,7 @@ def dataset():
         print(f"   • Clase {clase}: {n} seleccionadas de {len(grupo)}")
 
     if not partes:
-        raise SystemExit("❌ No se pudo muestrear ninguna clase. Revisa el archivo de entrada.")
+        raise SystemExit("No se pudo muestrear ninguna clase. Revisa el archivo de entrada.")
 
     df_final = pd.concat(partes).reset_index(drop=True)
 
@@ -73,24 +64,24 @@ def dataset():
     os.makedirs(SALIDA_DIR, exist_ok=True)
     df_final.to_csv(SALIDA_CSV, index=False, encoding="utf-8")
 
-    print("\n✅ Dataset preparado")
-    print(f"📁 Archivo: {SALIDA_CSV}")
-    print(f"🧮 Filas: {len(df_final)}")
+    print("\n Dataset preparado")
+    print(f" Archivo: {SALIDA_CSV}")
+    print(f" Filas: {len(df_final)}")
 
     # Muestra rápida
     print("\n" + "=" * 80)
-    print("📋 EJEMPLOS")
+    print(" EJEMPLOS")
     print("=" * 80)
     for i in range(min(3, len(df_final))):
         print("\n" + "─" * 80)
         print(f"EJEMPLO {i + 1}")
-        print("❓ PREGUNTA:")
+        print(" PREGUNTA:")
         print("  " + df_final.iloc[i]["pregunta"][:200] + ("..." if len(df_final.iloc[i]["pregunta"]) > 200 else ""))
-        print("\n✅ RESPUESTA:")
+        print("\n RESPUESTA:")
         print("  " + df_final.iloc[i]["respuesta"][:200] + ("..." if len(df_final.iloc[i]["respuesta"]) > 200 else ""))
 
     print("\n" + "=" * 80)
-    print("🏁 ¡Proceso completado!")
+    print("¡Proceso completado!")
     print("=" * 80)
 
 

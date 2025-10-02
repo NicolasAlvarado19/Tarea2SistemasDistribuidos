@@ -1,12 +1,3 @@
-"""
-SERVICIO DE ALMACENAMIENTO
-- Guarda la pregunta/respuesta original
-- Llama al microservicio de puntuación para obtener:
-    - respuesta_llm
-    - puntuacion_similitud
-- Persiste todo en PostgreSQL
-"""
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
@@ -18,9 +9,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# -----------------------------
-# Configuración de entorno
-# -----------------------------
 PG_HOST = os.getenv("POSTGRES_HOST", "postgres")
 PG_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
 PG_DB   = os.getenv("POSTGRES_DB", "yahoo_qa")
@@ -31,9 +19,6 @@ PUNTUACION_URL = os.getenv("PUNTUACION_URL", "http://puntuacion:8002")
 
 DATABASE_URL = f"postgresql+psycopg2://{PG_USER}:{PG_PASS}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 
-# -----------------------------
-# DB (SQLAlchemy)
-# -----------------------------
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
@@ -50,17 +35,11 @@ class QAResultado(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# -----------------------------
-# Utilidades
-# -----------------------------
 def nivel_similitud(s: float) -> str:
     if s >= 0.75: return "alta"
     if s >= 0.50: return "media"
     return "baja"
 
-# -----------------------------
-# API
-# -----------------------------
 app = FastAPI(title="Servicio de Almacenamiento")
 
 class BodyGuardar(BaseModel):
@@ -82,7 +61,6 @@ def salud():
 
 @app.post("/guardar-qa", response_model=DTOResultado)
 def guardar_qa(body: BodyGuardar):
-    # 1) llamar a puntuación
     try:
         r = requests.post(
             f"{PUNTUACION_URL}/generar-y-puntuar",
@@ -101,7 +79,6 @@ def guardar_qa(body: BodyGuardar):
     sim = float(data.get("puntuacion_similitud", 0.0))
     lvl = nivel_similitud(sim)
 
-    # 2) persistir
     db = SessionLocal()
     try:
         row = QAResultado(

@@ -66,21 +66,3 @@ python3 scripts/cargar_dataset.py --limite 10000 --sleep 0.35
 #Conteo total de resultados
 docker compose exec -T postgres psql -U admin -d yahoo_qa -c \
 "SELECT COUNT(*) FROM public.qa_resultados;"
-
-#Muestra últimos 5
-docker compose exec -T postgres psql -U admin -d yahoo_qa -c \
-"SELECT id, substring(pregunta,1,80)||'…' AS pregunta, puntuacion_similitud, nivel, creado_en
-   FROM public.qa_resultados ORDER BY creado_en DESC LIMIT 5;"
-
-#Exportar resultados
-docker compose exec -T postgres psql -U admin -d yahoo_qa -c \
-"\copy (
-  WITH ultimos AS (
-    SELECT * FROM public.qa_resultados ORDER BY id DESC LIMIT 10000
-  )
-  SELECT id, pregunta, respuesta_original, respuesta_llm,
-         ROUND(puntuacion_similitud::numeric,4) AS puntuacion_similitud,
-         nivel, creado_en
-  FROM ultimos
-  ORDER BY id
-) TO STDOUT WITH CSV HEADER" > resultados_ultimos_10k.csv

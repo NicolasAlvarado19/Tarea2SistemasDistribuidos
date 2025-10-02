@@ -1,11 +1,3 @@
-"""
-Servicio de Puntuación (LLM + Similitud)
-Requisitos:
-- google-generativeai==0.7.2
-- sentence-transformers==2.7.0
-- scikit-learn==1.3.2
-"""
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 import os, logging
@@ -15,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import uvicorn
 
-# ----------------- Logging y básicos
+
 os.environ.setdefault("SENTENCE_TRANSFORMERS_HOME", "/tmp/sbert-cache")
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"),
                     format="%(asctime)s [%(levelname)s] %(message)s")
@@ -23,12 +15,11 @@ log = logging.getLogger("puntuacion")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    raise RuntimeError("❌ GEMINI_API_KEY no está configurada.")
+    raise RuntimeError(" GEMINI_API_KEY no está configurada.")
 
-USER_MODEL = (os.getenv("GEMINI_MODEL") or "").strip()  # p.ej. gemini-1.5-flash-latest
+USER_MODEL = (os.getenv("GEMINI_MODEL") or "").strip()  
 EMBEDDINGS_MODEL_NAME = os.getenv("EMBEDDINGS_MODEL_NAME", "all-MiniLM-L6-v2")
 
-# ----------------- Config Google AI (0.7.2: sin api_version)
 genai.configure(api_key=GEMINI_API_KEY)
 
 def _with_prefix(name: str) -> str:
@@ -47,7 +38,7 @@ def _variants(name: str):
     return list(out)
 
 def elegir_modelo() -> str:
-    # Preferencias/fallbacks
+
     preferidos = []
     if USER_MODEL:
         preferidos += _variants(USER_MODEL)
@@ -57,7 +48,7 @@ def elegir_modelo() -> str:
     preferidos += _variants("gemini-1.5-pro")
     preferidos += _variants("gemini-1.0-pro")
 
-    # Primero intentamos usar list_models para filtrar por generateContent
+   
     soportan = set()
     try:
         modelos = list(genai.list_models())
@@ -70,15 +61,13 @@ def elegir_modelo() -> str:
     except Exception as e:
         log.warning("No pude listar modelos (%s). Intento directo por prueba.", e)
 
-    # 1) Si pudimos listar: elegimos el primero de preferidos que esté en soportan
     if soportan:
         for c in preferidos:
             if c in soportan or _with_prefix(c) in soportan:
                 elegido = c if c.startswith("models/") else _with_prefix(c)
-                log.info("✅ Modelo compatible (listado): %s", elegido)
+                log.info("Modelo compatible (listado): %s", elegido)
                 return elegido
 
-    # 2) Si no aparece listado, probamos a hacer generate_content("ping") hasta que funcione
     for c in preferidos:
         try:
             genai.GenerativeModel(c).generate_content("ping")
@@ -87,7 +76,6 @@ def elegir_modelo() -> str:
         except Exception:
             pass
 
-    # Último fallback muy conservador
     log.warning("Ningún candidato funcionó. Uso 'models/gemini-1.0-pro'.")
     return "models/gemini-1.0-pro"
 
@@ -95,16 +83,14 @@ EFFECTIVE_MODEL = elegir_modelo()
 
 try:
     modelo_gemini = genai.GenerativeModel(EFFECTIVE_MODEL)
-    log.info("✅ Gemini configurado. Modelo activo: %s", EFFECTIVE_MODEL)
+    log.info("Gemini configurado. Modelo activo: %s", EFFECTIVE_MODEL)
 except Exception as e:
     raise RuntimeError(f"Error inicializando Gemini con '{EFFECTIVE_MODEL}': {e}") from e
 
-# ----------------- Embeddings
-log.info("📥 Cargando embeddings '%s'...", EMBEDDINGS_MODEL_NAME)
+log.info("Cargando embeddings '%s'...", EMBEDDINGS_MODEL_NAME)
 modelo_embeddings = SentenceTransformer(EMBEDDINGS_MODEL_NAME)
-log.info("✅ Embeddings cargados.")
+log.info("Embeddings cargados.")
 
-# ----------------- FastAPI y esquemas
 app = FastAPI(title="Servicio de Puntuación")
 
 class SolicitudPuntuacion(BaseModel):
@@ -182,9 +168,9 @@ def salud():
 if __name__ == "__main__":
     puerto = int(os.getenv("PUERTO_PUNTUACION", "8002"))
     log.info("=" * 80)
-    log.info("🚀 INICIANDO SERVICIO DE PUNTUACIÓN")
-    log.info("🌐 Puerto: %s", puerto)
-    log.info("🤖 LLM: %s", EFFECTIVE_MODEL)
-    log.info("📊 Embeddings: %s", EMBEDDINGS_MODEL_NAME)
+    log.info("INICIANDO SERVICIO DE PUNTUACIÓN")
+    log.info(" Puerto: %s", puerto)
+    log.info("LLM: %s", EFFECTIVE_MODEL)
+    log.info("Embeddings: %s", EMBEDDINGS_MODEL_NAME)
     log.info("=" * 80)
     uvicorn.run(app, host="0.0.0.0", port=puerto)
