@@ -1,0 +1,82 @@
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: yahoo-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - red-yahoo
+
+  redis:
+    image: redis:7-alpine
+    container_name: yahoo-redis
+    command: [
+      "redis-server",
+      "--maxmemory", "${REDIS_MAX_MEMORIA:-256mb}",
+      "--maxmemory-policy", "${REDIS_POLITICA_EXPULSION:-allkeys-lru}"
+    ]
+    volumes:
+      - redisdata:/data
+    networks:
+      - red-yahoo
+
+  almacenamiento:
+    build:
+      context: ./servicio-almacenamiento
+      dockerfile: Dockerfile
+    container_name: yahoo-almacenamiento
+    env_file:
+      - .env
+    ports:
+      - "${PUERTO_ALMACENAMIENTO:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - red-yahoo
+
+  cache:
+    build:
+      context: ./servicio-cache
+      dockerfile: Dockerfile
+    container_name: yahoo-cache
+    env_file:
+      - .env
+    ports:
+      - "${PUERTO_CACHE:-8001}:8001"
+    depends_on:
+      - redis
+    networks:
+      - red-yahoo
+
+  puntuacion:
+    build:
+      context: ./servicio-puntuacion
+      dockerfile: Dockerfile
+    container_name: yahoo-puntuacion
+    env_file:
+      - .env
+    ports:
+      - "${PUERTO_PUNTUACION:-8002}:8002"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - red-yahoo
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  red-yahoo:
