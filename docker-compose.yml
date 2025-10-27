@@ -165,7 +165,7 @@ services:
       dockerfile: Dockerfile
     container_name: generador-tarea2
     ports:
-      - "8000:8000"
+      - "8003:8000"
     volumes:                                   
       - ./datos:/datos                          
     environment:
