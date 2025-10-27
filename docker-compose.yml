@@ -81,7 +81,7 @@ services:
 
   # ==================== SERVICIOS EXISTENTES ====================
   puntuacion:
-    build: ./puntuacion
+    build: ./servicio-puntuacion
     container_name: puntuacion-tarea2
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -93,7 +93,7 @@ services:
       - tarea2-net
 
   cache:
-    build: ./cache
+    build: ./servicio-cache
     container_name: cache-tarea2
     depends_on:
       - redis
@@ -107,7 +107,7 @@ services:
       - tarea2-net
 
   almacenamiento:
-    build: ./almacenamiento
+    build: ./servicio-almacenamiento
     container_name: almacenamiento-tarea2
     depends_on:
       - postgres
