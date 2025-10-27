@@ -182,7 +182,7 @@ services:
       kafka:
         condition: service_started
     networks:
-      - tarea2-network
+      - tarea2-net
     restart: always
 
 # ==================== REDES Y VOLUMENES ====================
