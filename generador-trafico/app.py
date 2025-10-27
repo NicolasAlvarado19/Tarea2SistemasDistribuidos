@@ -64,7 +64,7 @@ class GeneradorTrafico:
     
         fila = self.df_preguntas.iloc[indice]
         
-        return fila['pregunta'], fila['mejor_respuesta']
+        return fila['pregunta'], fila['respuesta']
     
     
     def procesar_consulta(self, pregunta, respuesta_original):
