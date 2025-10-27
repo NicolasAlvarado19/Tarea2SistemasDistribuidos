@@ -164,12 +164,10 @@ services:
       context: ./generador-trafico
       dockerfile: Dockerfile
     container_name: generador-tarea2
-    depends_on:
-      - postgres
-      - kafka
-      - cache
     ports:
-      - "${PUERTO_GENERADOR:-8003}:8000"   # cambia PUERTO_GENERADOR si necesitas otro host-port
+      - "8000:8000"
+    volumes:                                    # 👈 AGREGAR
+      - ./datos:/datos                          # 👈 AGREGAR
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
@@ -177,10 +175,15 @@ services:
       - POSTGRES_USER=tarea2_user
       - POSTGRES_PASSWORD=tarea2_password
       - CACHE_URL=http://cache:8001
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
-      - tarea2-net
-    restart: unless-stopped
+      - tarea2-network
+    restart: always
 
 # ==================== REDES Y VOLUMENES ====================
 networks:
