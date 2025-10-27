@@ -1,82 +1,159 @@
+version: '3.8'
 
 services:
+  # ==================== BASE DE DATOS ====================
   postgres:
-    image: postgres:15
-    container_name: yahoo-postgres
+    image: postgres:15-alpine
+    container_name: postgres-tarea2
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - tarea2-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - red-yahoo
 
   redis:
     image: redis:7-alpine
-    container_name: yahoo-redis
-    command: [
-      "redis-server",
-      "--maxmemory", "${REDIS_MAX_MEMORIA:-256mb}",
-      "--maxmemory-policy", "${REDIS_POLITICA_EXPULSION:-allkeys-lru}"
-    ]
-    volumes:
-      - redisdata:/data
-    networks:
-      - red-yahoo
-
-  almacenamiento:
-    build:
-      context: ./servicio-almacenamiento
-      dockerfile: Dockerfile
-    container_name: yahoo-almacenamiento
-    env_file:
-      - .env
+    container_name: redis-tarea2
+    command: redis-server --maxmemory ${REDIS_MAX_MEMORIA} --maxmemory-policy ${REDIS_POLITICA_EXPULSION}
     ports:
-      - "${PUERTO_ALMACENAMIENTO:-8000}:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - "${REDIS_PORT}:6379"
     networks:
-      - red-yahoo
+      - tarea2-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== KAFKA ====================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper-tarea2
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - tarea2-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-tarea2
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - tarea2-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-tarea2
+    depends_on:
+      - kafka
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: tarea2
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    networks:
+      - tarea2-net
+
+  # ==================== SERVICIOS EXISTENTES ====================
+  puntuacion:
+    build: ./puntuacion
+    container_name: puntuacion-tarea2
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - EMBEDDINGS_MODEL_NAME=${EMBEDDINGS_MODEL_NAME}
+    ports:
+      - "${PUERTO_PUNTUACION}:8002"
+    networks:
+      - tarea2-net
 
   cache:
-    build:
-      context: ./servicio-cache
-      dockerfile: Dockerfile
-    container_name: yahoo-cache
-    env_file:
-      - .env
-    ports:
-      - "${PUERTO_CACHE:-8001}:8001"
+    build: ./cache
+    container_name: cache-tarea2
     depends_on:
       - redis
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - TAMANIO_CACHE=${TAMANIO_CACHE}
+    ports:
+      - "${PUERTO_CACHE}:8001"
     networks:
-      - red-yahoo
+      - tarea2-net
 
-  puntuacion:
-    build:
-      context: ./servicio-puntuacion
-      dockerfile: Dockerfile
-    container_name: yahoo-puntuacion
-    env_file:
-      - .env
-    ports:
-      - "${PUERTO_PUNTUACION:-8002}:8002"
+  almacenamiento:
+    build: ./almacenamiento
+    container_name: almacenamiento-tarea2
     depends_on:
-      - redis
       - postgres
+      - kafka
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    ports:
+      - "${PUERTO_ALMACENAMIENTO}:8000"
     networks:
-      - red-yahoo
+      - tarea2-net
 
-volumes:
-  pgdata:
-  redisdata:
+  # ==================== SERVICIOS NUEVOS ====================
+  kafka-consumer:
+    build: ./kafka-consumer
+    container_name: kafka-consumer-tarea2
+    depends_on:
+      - kafka
+      - puntuacion
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PUNTUACION_URL=http://puntuacion:8002
+      - MAX_REINTENTOS=${MAX_REINTENTOS}
+      - BACKOFF_BASE=${BACKOFF_BASE}
+    networks:
+      - tarea2-net
+    restart: unless-stopped
+
+  reintentador:
+    build: ./reintentador
+    container_name: reintentador-tarea2
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - tarea2-net
+    restart: unless-stopped
 
 networks:
-  red-yahoo:
+  tarea2-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
