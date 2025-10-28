@@ -144,8 +144,8 @@ services:
       - PUNTUACION_URL=http://puntuacion:8002
       - MAX_REINTENTOS=${MAX_REINTENTOS}
       - BACKOFF_BASE=${BACKOFF_BASE}
-      - GEMINI_API_KEY=${AIzaSyCQKhjTFe0K33Ikd1IYSx4WrCgqNT1Re60}
-      - GEMINI_MODEL=${gemini-flash-latest}
+      - GEMINI_API_KEY=AIzaSyCQKhjTFe0K33Ikd1IYSx4WrCgqNT1Re60
+      - GEMINI_MODEL=gemini-flash-latest
     networks:
       - tarea2-net
     restart: unless-stopped
