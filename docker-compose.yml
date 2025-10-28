@@ -175,7 +175,7 @@ services:
       - POSTGRES_USER=tarea2_user
       - POSTGRES_PASSWORD=tarea2_password
       - CACHE_URL=http://cache:8001
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
