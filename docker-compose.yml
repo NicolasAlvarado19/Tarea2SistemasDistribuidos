@@ -131,6 +131,7 @@ services:
     networks:
       - tarea2-net
     restart: unless-stopped
+    command: python almacenamiento_consumer.py
 
   # ==================== SERVICIOS NUEVOS ====================
   kafka-consumer:
