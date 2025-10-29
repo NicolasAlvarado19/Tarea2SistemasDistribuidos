@@ -161,6 +161,22 @@ services:
       - tarea2-net
     restart: unless-stopped
 
+    
+  puntuacion-consumer:
+    build: ./puntuacion-consumer
+    container_name: puntuacion-consumer-tarea2
+    depends_on:
+      - kafka
+      - puntuacion
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PUNTUACION_URL=http://puntuacion:8002
+      - UMBRAL_SCORE=0.6
+      - MAX_REINTENTOS_SCORE=2
+    networks:
+      - tarea2-net
+    restart: unless-stopped
+
   generador-trafico:
     build:
       context: ./generador-trafico
