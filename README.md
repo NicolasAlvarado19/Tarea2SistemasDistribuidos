@@ -1,16 +1,15 @@
 # Tarea 2 - Sistemas Distribuidos 2025-2
 ## Plataforma de Análisis de Preguntas y Respuestas con Procesamiento Asíncrono
 
-### 👥 Integrantes
-- [Tu Nombre] - [Tu RUT]
-- [Compañero] - [RUT]
+### Integrantes
+- Nicolas Alvarado Villanueva- 20387702-1
 
-### 📝 Descripción
+### Descripción
 Sistema distribuido que procesa preguntas del dataset Yahoo! Answers, genera respuestas usando un LLM (Google Gemini), evalúa su calidad mediante similitud semántica, y persiste los resultados validados en PostgreSQL. Implementa procesamiento asíncrono con Apache Kafka para manejar errores de cuota y sobrecarga de forma resiliente.
 
 ---
 
-## 🏗️ Arquitectura
+## Arquitectura
 
 ### Componentes Principales
 
@@ -60,7 +59,7 @@ Sistema distribuido que procesa preguntas del dataset Yahoo! Answers, genera res
 
 ---
 
-## 🔄 Flujo de Datos
+## Flujo de Datos
 ```
 ┌─────────────────────┐
 │ Generador Tráfico   │
@@ -133,7 +132,7 @@ Sistema distribuido que procesa preguntas del dataset Yahoo! Answers, genera res
 
 ---
 
-## 📊 Topics de Kafka
+## Topics de Kafka
 
 | Topic | Descripción | Productores | Consumidores |
 |-------|-------------|-------------|--------------|
@@ -145,7 +144,7 @@ Sistema distribuido que procesa preguntas del dataset Yahoo! Answers, genera res
 
 ---
 
-## 🔧 Tecnologías
+## Tecnologías
 
 ### Backend
 - Python 3.9+
@@ -165,7 +164,7 @@ Sistema distribuido que procesa preguntas del dataset Yahoo! Answers, genera res
 
 ---
 
-## 🚀 Instrucciones de Despliegue
+## Instrucciones de Despliegue
 
 ### Prerrequisitos
 - Docker y Docker Compose instalados
@@ -194,31 +193,18 @@ TASA_CONSULTAS=0.0033  # 12 req/hora
 UMBRAL_SCORE=0.5
 ```
 
-3. **Preparar dataset**
+3. ### Iniciar Sistema
 ```bash
-# Colocar train.csv en ./datos/
-mkdir -p datos
-# Copiar tu train.csv a datos/
-```
-
-### Iniciar Sistema
-```bash
-# Construir todos los servicios
 docker-compose build
 
-# Levantar infraestructura base
 docker-compose up -d postgres redis kafka zookeeper
 
-# Esperar 30 segundos para que Kafka esté listo
 sleep 30
 
-# Levantar servicios
 docker-compose up -d
 
-# Ver estado
 docker-compose ps
 
-# Ver logs en tiempo real
 docker-compose logs -f
 ```
 
@@ -227,13 +213,13 @@ docker-compose logs -f
 # Detener todos los servicios
 docker-compose down
 
-# Eliminar volúmenes (datos persistentes)
+# Eliminar volúmenes 
 docker-compose down -v
 ```
 
 ---
 
-## 📈 Monitoreo
+## Monitoreo
 
 ### Kafka UI
 - URL: http://localhost:8090
@@ -277,7 +263,7 @@ FROM resultados_validados;
 
 ---
 
-## 📊 Configuración de Producción
+## Configuración de Producción
 
 ### Parámetros Recomendados
 
@@ -296,7 +282,7 @@ FROM resultados_validados;
 
 ---
 
-## 🧪 Pruebas
+## Pruebas
 
 ### Verificar Funcionamiento
 
@@ -318,41 +304,4 @@ docker exec -it kafka-tarea2 kafka-console-consumer \
   --from-beginning \
   --max-messages 5
 ```
-
 ---
-
-## 📝 Resultados
-
-### Métricas Obtenidas
-- **Preguntas procesadas**: 754
-- **Respuestas exitosas**: 251 (33.3%)
-- **Tasa de validación**: 10.3% (umbral 0.6)
-- **Preguntas únicas en BD**: 3
-- **Score promedio**: 0.6774
-- **Distribución de calidad**:
-  - Excelentes (≥0.7): 67%
-  - Buenas (0.6-0.7): 33%
-
----
-
-## 🔐 Seguridad
-
-- Credenciales en variables de entorno
-- Red Docker aislada
-- API Keys no commiteadas
-
----
-
-## 📚 Referencias
-
-- [Documentación Kafka](https://kafka.apache.org/documentation/)
-- [Google Gemini API](https://ai.google.dev/gemini-api/docs)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Sentence Transformers](https://www.sbert.net/)
-
----
-
-## 📄 Licencia
-
-Proyecto académico - Universidad Diego Portales
-Sistemas Distribuidos 2025-2

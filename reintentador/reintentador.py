@@ -25,22 +25,22 @@ class Reintentador:
         
         # Consumer de AMBOS topics de errores
         self.consumer = KafkaConsumer(
-            'errores-cuota',      # ✅ CRÍTICO: Procesar cuota
-            'errores-sobrecarga',  # ✅ Procesar sobrecarga
+            'errores-cuota',      
+            'errores-sobrecarga',  
             bootstrap_servers=self.bootstrap_servers,
             value_deserializer=lambda v: json.loads(v.decode('utf-8')),
             group_id='reintentador-group',
             auto_offset_reset='earliest',
             enable_auto_commit=True
         )
-        logger.info("✅ Consumer conectado a topics de errores")
+        logger.info(" Consumer conectado a topics de errores")
         
         # Producer
         self.producer = KafkaProducer(
             bootstrap_servers=self.bootstrap_servers,
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
-        logger.info("✅ Producer conectado")
+        logger.info(" Producer conectado")
         
         # Métricas
         self.mensajes_procesados = 0
@@ -60,14 +60,14 @@ class Reintentador:
                 result = sock.connect_ex((kafka_host, kafka_port))
                 sock.close()
                 if result == 0:
-                    logger.info("✅ Kafka disponible")
+                    logger.info(" Kafka disponible")
                     time.sleep(5)
                     return
             except Exception:
                 pass
-            logger.info(f"⏳ Esperando Kafka... ({attempt + 1}/{max_attempts})")
+            logger.info(f" Esperando Kafka... ({attempt + 1}/{max_attempts})")
             time.sleep(2)
-        raise Exception("❌ No se pudo conectar a Kafka")
+        raise Exception(" No se pudo conectar a Kafka")
     
     def procesar_error(self, mensaje, topic):
         """Procesa un mensaje de error con delay apropiado"""
@@ -78,26 +78,23 @@ class Reintentador:
             respuesta_original = mensaje.get('respuesta_original', '')
             intento_actual = mensaje.get('intento', 1)
             
-            # ✅ CRÍTICO: Usar el campo correcto de Gemini
             retry_delay = mensaje.get('retry_delay', 60)
             
-            # Extraer segundos si viene en formato {seconds: X}
             if isinstance(retry_delay, dict):
                 retry_delay = retry_delay.get('seconds', 60)
             
-            logger.info(f"⚠️ Error en {topic}")
+            logger.info(f"  Error en {topic}")
             logger.info(f"   Pregunta: {pregunta[:50]}...")
             logger.info(f"   Intento: {intento_actual}/{self.max_reintentos}")
             logger.info(f"   Delay requerido: {retry_delay}s")
             
-            # ✅ Verificar límite de reintentos
+            # Verificar límite de reintentos
             if intento_actual >= self.max_reintentos:
                 self.descartados += 1
-                logger.error(f"❌ DESCARTADO - Reintentos agotados")
+                logger.error(f" DESCARTADO - Reintentos agotados")
                 return
             
-            # ✅ CRÍTICO: Esperar el delay ANTES de reenviar
-            logger.info(f"⏳ Esperando {retry_delay}s antes de reintentar...")
+            logger.info(f" Esperando {retry_delay}s antes de reintentar...")
             time.sleep(retry_delay)
             
             # Reenviar a preguntas-nuevas
@@ -112,18 +109,18 @@ class Reintentador:
             self.producer.flush()
             
             self.reintentos_enviados += 1
-            logger.info(f"🔄 REINTENTO {intento_actual + 1} enviado después de esperar")
+            logger.info(f" REINTENTO {intento_actual + 1} enviado después de esperar")
             
         except Exception as e:
-            logger.error(f"❌ Error procesando mensaje: {e}")
+            logger.error(f" Error procesando mensaje: {e}")
     
     def iniciar(self):
         """Inicia el reintentador"""
         logger.info("=" * 80)
-        logger.info("🚀 REINTENTADOR INICIADO")
+        logger.info(" REINTENTADOR INICIADO")
         logger.info("=" * 80)
-        logger.info(f"🔄 Máximo reintentos: {self.max_reintentos}")
-        logger.info("📥 Esperando mensajes de: errores-cuota, errores-sobrecarga")
+        logger.info(f" Máximo reintentos: {self.max_reintentos}")
+        logger.info(" Esperando mensajes de: errores-cuota, errores-sobrecarga")
         logger.info("=" * 80)
         
         try:
@@ -136,7 +133,7 @@ class Reintentador:
                     self._mostrar_metricas()
                     
         except KeyboardInterrupt:
-            logger.info("\n⚠️ Interrumpido por el usuario")
+            logger.info("\n Interrumpido por el usuario")
         finally:
             self._mostrar_metricas()
             self.consumer.close()
@@ -145,11 +142,11 @@ class Reintentador:
     def _mostrar_metricas(self):
         """Muestra métricas del servicio"""
         logger.info("=" * 80)
-        logger.info("📊 MÉTRICAS DEL REINTENTADOR")
+        logger.info(" MÉTRICAS DEL REINTENTADOR")
         logger.info("=" * 80)
         logger.info(f"Mensajes procesados: {self.mensajes_procesados}")
-        logger.info(f"🔄 Reintentos enviados: {self.reintentos_enviados}")
-        logger.info(f"❌ Descartados: {self.descartados}")
+        logger.info(f" Reintentos enviados: {self.reintentos_enviados}")
+        logger.info(f" Descartados: {self.descartados}")
         logger.info("=" * 80)
 
 if __name__ == "__main__":

@@ -36,7 +36,7 @@ class GeneradorTrafico:
             acks='all',
             retries=3
         )
-        logger.info("✅ Conectado a Kafka exitosamente")
+        logger.info(" Conectado a Kafka exitosamente")
         
         # Métricas
         self.consultas_enviadas = 0
@@ -94,7 +94,7 @@ class GeneradorTrafico:
                 json={"pregunta": pregunta},
                 timeout=5
             )
-            logger.info("📊 Contador actualizado en BD")
+            logger.info(" Contador actualizado en BD")
             return True
         except Exception as e:
             logger.error(f"Error al actualizar contador: {str(e)}")
@@ -115,11 +115,11 @@ class GeneradorTrafico:
             future = self.producer.send('preguntas-nuevas', value=mensaje)
             future.get(timeout=10)  # Esperar confirmación
             
-            logger.info("📤 Pregunta enviada a Kafka (topic: preguntas-nuevas)")
+            logger.info(" Pregunta enviada a Kafka (topic: preguntas-nuevas)")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error al enviar a Kafka: {str(e)}")
+            logger.error(f" Error al enviar a Kafka: {str(e)}")
             return False
     
     def procesar_consulta(self, pregunta, respuesta_original):
@@ -127,31 +127,31 @@ class GeneradorTrafico:
         Flujo asíncrono: Consulta BD → Si existe actualiza, si no envía a Kafka
         """
         try:
-            logger.info(f"🔍 Verificando en BD: {pregunta[:50]}...")
+            logger.info(f" Verificando en BD: {pregunta[:50]}...")
             
             existe, veces = self.verificar_pregunta_existe(pregunta)
             
             if existe:
-                logger.info(f"✅ ENCONTRADA en BD (consultada {veces} veces) - Actualizando contador")
+                logger.info(f" ENCONTRADA en BD (consultada {veces} veces) - Actualizando contador")
                 self.consultas_existentes += 1
                 self.actualizar_contador_pregunta(pregunta)
                 return True
             else:
-                logger.info("🆕 NO ENCONTRADA - Enviando a Kafka para procesamiento")
+                logger.info(" NO ENCONTRADA - Enviando a Kafka para procesamiento")
                 self.consultas_nuevas += 1
                 return self.enviar_a_kafka(pregunta, respuesta_original)
         
         except Exception as error:
-            logger.error(f"❌ ERROR: {str(error)}")
+            logger.error(f" ERROR: {str(error)}")
             return False
     
     def ejecutar(self, num_consultas=500, duracion_minutos=None):
         logger.info("="*80)
-        logger.info("🚀 INICIANDO GENERADOR DE TRÁFICO - MODO ASÍNCRONO")
+        logger.info(" INICIANDO GENERADOR DE TRÁFICO - MODO ASÍNCRONO")
         logger.info("="*80)
-        logger.info(f"📊 Distribución: {self.distribucion}")
-        logger.info(f"⏱️  Tasa: {self.tasa} consultas/minuto")
-        logger.info(f"🎯 Total consultas: {num_consultas}")
+        logger.info(f" Distribución: {self.distribucion}")
+        logger.info(f"  Tasa: {self.tasa} consultas/minuto")
+        logger.info(f" Total consultas: {num_consultas}")
         logger.info("="*80)
         
         tiempo_inicio = time.time()
@@ -160,7 +160,7 @@ class GeneradorTrafico:
             if duracion_minutos:
                 tiempo_transcurrido = (time.time() - tiempo_inicio) / 60
                 if tiempo_transcurrido > duracion_minutos:
-                    logger.info(f"⏰ Tiempo límite alcanzado: {duracion_minutos} minutos")
+                    logger.info(f" Tiempo límite alcanzado: {duracion_minutos} minutos")
                     break
             
             pregunta, respuesta = self.seleccionar_pregunta()
@@ -182,14 +182,14 @@ class GeneradorTrafico:
     
     def mostrar_progreso(self):
         logger.info("="*80)
-        logger.info(f"📈 PROGRESO: {self.consultas_enviadas} consultas procesadas")
-        logger.info(f"✅ Existentes en BD: {self.consultas_existentes}")
-        logger.info(f"🆕 Nuevas (enviadas a Kafka): {self.consultas_nuevas}")
-        logger.info(f"❌ Fallidas: {self.consultas_fallidas}")
+        logger.info(f" PROGRESO: {self.consultas_enviadas} consultas procesadas")
+        logger.info(f" Existentes en BD: {self.consultas_existentes}")
+        logger.info(f" Nuevas (enviadas a Kafka): {self.consultas_nuevas}")
+        logger.info(f" Fallidas: {self.consultas_fallidas}")
         
         if self.consultas_enviadas > 0:
             tasa_existentes = (self.consultas_existentes / self.consultas_enviadas) * 100
-            logger.info(f"📊 Tasa de preguntas ya procesadas: {tasa_existentes:.1f}%")
+            logger.info(f" Tasa de preguntas ya procesadas: {tasa_existentes:.1f}%")
         
         logger.info("="*80)
     
@@ -198,21 +198,21 @@ class GeneradorTrafico:
         
         logger.info("")
         logger.info("="*80)
-        logger.info("🏁 GENERACIÓN DE TRÁFICO COMPLETADA")
+        logger.info(" GENERACIÓN DE TRÁFICO COMPLETADA")
         logger.info("="*80)
-        logger.info(f"⏱️  Tiempo total: {tiempo_total:.2f} segundos ({tiempo_total/60:.2f} minutos)")
-        logger.info(f"📊 Total consultas: {self.consultas_enviadas}")
-        logger.info(f"✅ Existentes en BD: {self.consultas_existentes}")
-        logger.info(f"🆕 Nuevas (Kafka): {self.consultas_nuevas}")
-        logger.info(f"❌ Fallidas: {self.consultas_fallidas}")
+        logger.info(f"  Tiempo total: {tiempo_total:.2f} segundos ({tiempo_total/60:.2f} minutos)")
+        logger.info(f" Total consultas: {self.consultas_enviadas}")
+        logger.info(f" Existentes en BD: {self.consultas_existentes}")
+        logger.info(f" Nuevas (Kafka): {self.consultas_nuevas}")
+        logger.info(f" Fallidas: {self.consultas_fallidas}")
         
         if self.consultas_enviadas > 0:
             tasa_exito = ((self.consultas_enviadas - self.consultas_fallidas) / self.consultas_enviadas) * 100
             tasa_nuevas = (self.consultas_nuevas / self.consultas_enviadas) * 100
             throughput = self.consultas_enviadas / tiempo_total
             
-            logger.info(f"📈 Tasa de éxito: {tasa_exito:.1f}%")
-            logger.info(f"🆕 Tasa de preguntas nuevas: {tasa_nuevas:.1f}%")
+            logger.info(f" Tasa de éxito: {tasa_exito:.1f}%")
+            logger.info(f" Tasa de preguntas nuevas: {tasa_nuevas:.1f}%")
             logger.info(f"⚡ Throughput: {throughput:.2f} consultas/segundo")
         
         logger.info("="*80)

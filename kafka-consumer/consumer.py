@@ -23,7 +23,7 @@ class LLMConsumer:
         logger.info("Configurando cliente de Gemini...")
         genai.configure(api_key=self.gemini_api_key)
         self.model = genai.GenerativeModel(self.gemini_model)
-        logger.info(f"✅ Gemini configurado: {self.gemini_model}")
+        logger.info(f" Gemini configurado: {self.gemini_model}")
         
         # Consumer de Kafka
         logger.info("Conectando consumer a Kafka...")
@@ -35,7 +35,7 @@ class LLMConsumer:
             auto_offset_reset='earliest',
             enable_auto_commit=True
         )
-        logger.info("✅ Consumer conectado")
+        logger.info(" Consumer conectado")
         
         # Producer de Kafka
         logger.info("Conectando producer a Kafka...")
@@ -45,7 +45,7 @@ class LLMConsumer:
             acks='all',
             retries=3
         )
-        logger.info("✅ Producer conectado")
+        logger.info(" Producer conectado")
         
         # Métricas
         self.mensajes_procesados = 0
@@ -82,7 +82,7 @@ Respuesta:"""
         
         except google_exceptions.ResourceExhausted as e:
             # Error de cuota (rate limit)
-            logger.warning(f"⚠️ CUOTA EXCEDIDA: {str(e)}")
+            logger.warning(f" CUOTA EXCEDIDA: {str(e)}")
             return {
                 'exito': False,
                 'respuesta': None,
@@ -92,7 +92,7 @@ Respuesta:"""
         
         except google_exceptions.ServiceUnavailable as e:
             # Servicio no disponible / sobrecarga
-            logger.warning(f"⚠️ SERVICIO NO DISPONIBLE: {str(e)}")
+            logger.warning(f" SERVICIO NO DISPONIBLE: {str(e)}")
             return {
                 'exito': False,
                 'respuesta': None,
@@ -102,7 +102,7 @@ Respuesta:"""
         
         except google_exceptions.InternalServerError as e:
             # Error interno del servidor (sobrecarga)
-            logger.warning(f"⚠️ ERROR INTERNO DEL SERVIDOR: {str(e)}")
+            logger.warning(f" ERROR INTERNO DEL SERVIDOR: {str(e)}")
             return {
                 'exito': False,
                 'respuesta': None,
@@ -112,7 +112,7 @@ Respuesta:"""
         
         except Exception as e:
             # Otros errores
-            logger.error(f"❌ ERROR INESPERADO: {str(e)}")
+            logger.error(f" ERROR INESPERADO: {str(e)}")
             return {
                 'exito': False,
                 'respuesta': None,
@@ -128,14 +128,14 @@ Respuesta:"""
         respuesta_original = mensaje.get('respuesta_original')
         intentos = mensaje.get('intentos', 0)
         
-        logger.info(f"🔄 Procesando: {pregunta[:50]}... (Intento {intentos + 1})")
+        logger.info(f" Procesando: {pregunta[:50]}... (Intento {intentos + 1})")
         
         # Llamar al LLM
         resultado = self.llamar_llm(pregunta)
         
         if resultado['exito']:
-            # ✅ Respuesta exitosa
-            logger.info("✅ Respuesta generada exitosamente")
+            #  Respuesta exitosa
+            logger.info(" Respuesta generada exitosamente")
             self.respuestas_exitosas += 1
             
             mensaje_exitoso = {
@@ -147,24 +147,24 @@ Respuesta:"""
             }
             
             self.producer.send('respuestas-exitosas', value=mensaje_exitoso)
-            logger.info("📤 Enviado a topic: respuestas-exitosas")
+            logger.info(" Enviado a topic: respuestas-exitosas")
         
         else:
-            # ❌ Error - clasificar y enviar al topic correspondiente
+            #  Error - clasificar y enviar al topic correspondiente
             error_tipo = resultado['error_tipo']
             
             if error_tipo == 'cuota':
-                logger.warning("📮 Enviando a topic: errores-cuota")
+                logger.warning(" Enviando a topic: errores-cuota")
                 self.errores_cuota += 1
                 topic_destino = 'errores-cuota'
             
             elif error_tipo == 'sobrecarga':
-                logger.warning("📮 Enviando a topic: errores-sobrecarga")
+                logger.warning(" Enviando a topic: errores-sobrecarga")
                 self.errores_sobrecarga += 1
                 topic_destino = 'errores-sobrecarga'
             
             else:
-                logger.error("📮 Error desconocido - descartando mensaje")
+                logger.error(" Error desconocido - descartando mensaje")
                 self.errores_otros += 1
                 return  # No reintentamos errores desconocidos
             
@@ -185,17 +185,17 @@ Respuesta:"""
         Muestra métricas del consumer
         """
         logger.info("="*80)
-        logger.info(f"📊 MÉTRICAS DEL CONSUMER")
+        logger.info(f" MÉTRICAS DEL CONSUMER")
         logger.info("="*80)
         logger.info(f"Mensajes procesados: {self.mensajes_procesados}")
-        logger.info(f"✅ Respuestas exitosas: {self.respuestas_exitosas}")
-        logger.info(f"⚠️ Errores de cuota: {self.errores_cuota}")
-        logger.info(f"⚠️ Errores de sobrecarga: {self.errores_sobrecarga}")
-        logger.info(f"❌ Otros errores: {self.errores_otros}")
+        logger.info(f" Respuestas exitosas: {self.respuestas_exitosas}")
+        logger.info(f" Errores de cuota: {self.errores_cuota}")
+        logger.info(f" Errores de sobrecarga: {self.errores_sobrecarga}")
+        logger.info(f" Otros errores: {self.errores_otros}")
         
         if self.mensajes_procesados > 0:
             tasa_exito = (self.respuestas_exitosas / self.mensajes_procesados) * 100
-            logger.info(f"📈 Tasa de éxito: {tasa_exito:.1f}%")
+            logger.info(f" Tasa de éxito: {tasa_exito:.1f}%")
         
         logger.info("="*80)
     
@@ -204,9 +204,9 @@ Respuesta:"""
         Loop principal del consumer
         """
         logger.info("="*80)
-        logger.info("🚀 CONSUMER DE LLM INICIADO")
+        logger.info(" CONSUMER DE LLM INICIADO")
         logger.info("="*80)
-        logger.info("📥 Esperando mensajes del topic: preguntas-nuevas")
+        logger.info(" Esperando mensajes del topic: preguntas-nuevas")
         logger.info("="*80)
         
         try:
@@ -221,17 +221,17 @@ Respuesta:"""
                         self.mostrar_metricas()
                 
                 except Exception as e:
-                    logger.error(f"❌ Error al procesar mensaje: {str(e)}")
+                    logger.error(f" Error al procesar mensaje: {str(e)}")
                     continue
         
         except KeyboardInterrupt:
-            logger.info("\n⚠️ Deteniendo consumer...")
+            logger.info("\n Deteniendo consumer...")
             self.mostrar_metricas()
         
         finally:
             self.consumer.close()
             self.producer.close()
-            logger.info("✅ Consumer cerrado correctamente")
+            logger.info(" Consumer cerrado correctamente")
 
 if __name__ == "__main__":
     consumer = LLMConsumer()

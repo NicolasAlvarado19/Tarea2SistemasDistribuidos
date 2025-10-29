@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "=================================================="
-echo "📊 MÉTRICAS DEL SISTEMA"
+echo "MÉTRICAS DEL SISTEMA"
 echo "=================================================="
 echo ""
 

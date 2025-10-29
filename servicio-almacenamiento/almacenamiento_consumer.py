@@ -45,7 +45,7 @@ class AlmacenamientoConsumer:
             auto_offset_reset='earliest',
             enable_auto_commit=True
         )
-        logger.info("✅ Consumer conectado a 'resultados-validados'")
+        logger.info("Consumer conectado a 'resultados-validados'")
         
         # Métricas
         self.registros_guardados = 0
@@ -65,16 +65,16 @@ class AlmacenamientoConsumer:
                 sock.close()
                 
                 if result == 0:
-                    logger.info(f"✅ Kafka disponible")
+                    logger.info(f"Kafka disponible")
                     time.sleep(5)
                     return
             except Exception:
                 pass
             
-            logger.info(f"⏳ Esperando Kafka... ({attempt + 1}/{max_attempts})")
+            logger.info(f"Esperando Kafka... ({attempt + 1}/{max_attempts})")
             time.sleep(2)
         
-        raise Exception("❌ No se pudo conectar a Kafka")
+        raise Exception("No se pudo conectar a Kafka")
     
     def _wait_for_postgres(self, max_attempts=30):
         """Espera a que PostgreSQL esté disponible"""
@@ -82,13 +82,13 @@ class AlmacenamientoConsumer:
             try:
                 conn = psycopg2.connect(**self.db_config)
                 conn.close()
-                logger.info("✅ PostgreSQL disponible")
+                logger.info("PostgreSQL disponible")
                 return
             except Exception:
                 logger.info(f"⏳ Esperando PostgreSQL... ({attempt + 1}/{max_attempts})")
                 time.sleep(2)
         
-        raise Exception("❌ No se pudo conectar a PostgreSQL")
+        raise Exception(" No se pudo conectar a PostgreSQL")
     
     def _init_table(self):
         """Crea la tabla si no existe"""
@@ -113,10 +113,10 @@ class AlmacenamientoConsumer:
             cur.close()
             conn.close()
             
-            logger.info("✅ Tabla 'resultados_validados' lista")
+            logger.info("Tabla 'resultados_validados' lista")
             
         except Exception as e:
-            logger.error(f"❌ Error creando tabla: {e}")
+            logger.error(f"Error creando tabla: {e}")
             raise
     
     def guardar_resultado(self, mensaje):
@@ -150,20 +150,20 @@ class AlmacenamientoConsumer:
             conn.close()
             
             self.registros_guardados += 1
-            logger.info(f"✅ Guardado: {pregunta[:50]}... (score={score:.4f}, intentos={intentos})")
+            logger.info(f" Guardado: {pregunta[:50]}... (score={score:.4f}, intentos={intentos})")
             
         except Exception as e:
             self.errores += 1
-            logger.error(f"❌ Error guardando: {e}")
+            logger.error(f" Error guardando: {e}")
     
     def iniciar(self):
         """
         Inicia el consumer
         """
         logger.info("=" * 80)
-        logger.info("🚀 CONSUMER DE ALMACENAMIENTO INICIADO")
+        logger.info("CONSUMER DE ALMACENAMIENTO INICIADO")
         logger.info("=" * 80)
-        logger.info("📥 Esperando mensajes de 'resultados-validados'...")
+        logger.info("Esperando mensajes de 'resultados-validados'...")
         logger.info("=" * 80)
         
         try:
@@ -175,7 +175,7 @@ class AlmacenamientoConsumer:
                     self._mostrar_metricas()
                     
         except KeyboardInterrupt:
-            logger.info("\n⚠️ Interrumpido por el usuario")
+            logger.info("\n Interrumpido por el usuario")
         finally:
             self._mostrar_metricas()
             self.consumer.close()
@@ -183,10 +183,10 @@ class AlmacenamientoConsumer:
     def _mostrar_metricas(self):
         """Muestra métricas del servicio"""
         logger.info("=" * 80)
-        logger.info("📊 MÉTRICAS DEL ALMACENAMIENTO")
+        logger.info("MÉTRICAS DEL ALMACENAMIENTO")
         logger.info("=" * 80)
-        logger.info(f"✅ Registros guardados: {self.registros_guardados}")
-        logger.info(f"❌ Errores: {self.errores}")
+        logger.info(f"Registros guardados: {self.registros_guardados}")
+        logger.info(f"Errores: {self.errores}")
         logger.info("=" * 80)
 
 if __name__ == "__main__":

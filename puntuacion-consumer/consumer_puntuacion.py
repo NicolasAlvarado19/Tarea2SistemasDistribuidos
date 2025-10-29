@@ -37,14 +37,14 @@ class PuntuacionConsumer:
             auto_offset_reset='earliest',
             enable_auto_commit=True
         )
-        logger.info("✅ Consumer conectado a 'respuestas-exitosas'")
+        logger.info(" Consumer conectado a 'respuestas-exitosas'")
         
         # Producer
         self.producer = KafkaProducer(
             bootstrap_servers=self.bootstrap_servers,
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
-        logger.info("✅ Producer conectado")
+        logger.info(" Producer conectado")
         
         # Métricas
         self.mensajes_procesados = 0
@@ -66,16 +66,16 @@ class PuntuacionConsumer:
                 sock.close()
                 
                 if result == 0:
-                    logger.info(f"✅ Kafka disponible en {self.bootstrap_servers}")
+                    logger.info(f" Kafka disponible en {self.bootstrap_servers}")
                     time.sleep(5)
                     return
             except Exception:
                 pass
             
-            logger.info(f"⏳ Esperando Kafka... ({attempt + 1}/{max_attempts})")
+            logger.info(f" Esperando Kafka... ({attempt + 1}/{max_attempts})")
             time.sleep(2)
         
-        raise Exception("❌ No se pudo conectar a Kafka")
+        raise Exception(" No se pudo conectar a Kafka")
     
     def _wait_for_puntuacion(self, max_attempts=30):
         """Espera a que el servicio de puntuación esté disponible"""
@@ -83,15 +83,15 @@ class PuntuacionConsumer:
             try:
                 response = requests.get(f"{self.puntuacion_url}/salud", timeout=2)
                 if response.status_code == 200:
-                    logger.info(f"✅ Servicio de puntuación disponible")
+                    logger.info(f" Servicio de puntuación disponible")
                     return
             except Exception:
                 pass
             
-            logger.info(f"⏳ Esperando servicio de puntuación... ({attempt + 1}/{max_attempts})")
+            logger.info(f" Esperando servicio de puntuación... ({attempt + 1}/{max_attempts})")
             time.sleep(2)
         
-        logger.warning("⚠️ Servicio de puntuación no responde, continuando de todas formas")
+        logger.warning(" Servicio de puntuación no responde, continuando de todas formas")
     
     def calcular_score(self, pregunta: str, respuesta_original: str, respuesta_llm: str) -> float:
         """
@@ -114,11 +114,11 @@ class PuntuacionConsumer:
                 data = response.json()
                 return float(data.get('similitud', 0.0))
             else:
-                logger.error(f"❌ Error en API de puntuación: {response.status_code}")
+                logger.error(f" Error en API de puntuación: {response.status_code}")
                 return 0.0
                 
         except Exception as e:
-            logger.error(f"❌ Error calculando score: {e}")
+            logger.error(f" Error calculando score: {e}")
             return 0.0
     
     def procesar_respuesta(self, mensaje):
@@ -134,11 +134,11 @@ class PuntuacionConsumer:
             # Calcular score
             score = self.calcular_score(pregunta, respuesta_yahoo, respuesta_llm)
             
-            logger.info(f"📊 Score calculado: {score:.4f} | Umbral: {self.umbral_minimo}")
+            logger.info(f" Score calculado: {score:.4f} | Umbral: {self.umbral_minimo}")
             
             # Decisión basada en score
             if score >= self.umbral_minimo:
-                # ✅ Score aceptable - enviar a resultados validados
+                #  Score aceptable - enviar a resultados validados
                 resultado = {
                     'pregunta': pregunta,
                     'respuesta_original': respuesta_yahoo,
@@ -151,10 +151,10 @@ class PuntuacionConsumer:
                 self.producer.flush()
                 
                 self.respuestas_validadas += 1
-                logger.info(f"✅ VALIDADA (score={score:.4f}) - Enviada a 'resultados-validados'")
+                logger.info(f" VALIDADA (score={score:.4f}) - Enviada a 'resultados-validados'")
                 
             else:
-                # ❌ Score bajo - verificar reintentos
+                #  Score bajo - verificar reintentos
                 if intento_actual < self.max_reintentos:
                     # Reenviar a preguntas-nuevas
                     mensaje_reintento = {
@@ -168,25 +168,25 @@ class PuntuacionConsumer:
                     self.producer.flush()
                     
                     self.reintentos_enviados += 1
-                    logger.warning(f"🔄 REINTENTO {intento_actual + 1}/{self.max_reintentos} (score={score:.4f})")
+                    logger.warning(f" REINTENTO {intento_actual + 1}/{self.max_reintentos} (score={score:.4f})")
                 else:
                     # Agotados los reintentos - descartar
                     self.respuestas_rechazadas += 1
-                    logger.error(f"❌ DESCARTADA - Reintentos agotados (score={score:.4f})")
+                    logger.error(f" DESCARTADA - Reintentos agotados (score={score:.4f})")
             
         except Exception as e:
-            logger.error(f"❌ Error procesando respuesta: {e}")
+            logger.error(f" Error procesando respuesta: {e}")
     
     def iniciar(self):
         """
         Inicia el consumer
         """
         logger.info("=" * 80)
-        logger.info("🚀 CONSUMER DE PUNTUACIÓN INICIADO")
+        logger.info(" CONSUMER DE PUNTUACIÓN INICIADO")
         logger.info("=" * 80)
-        logger.info(f"📊 Umbral mínimo: {self.umbral_minimo}")
-        logger.info(f"🔄 Máximo reintentos: {self.max_reintentos}")
-        logger.info("📥 Esperando mensajes de 'respuestas-exitosas'...")
+        logger.info(f" Umbral mínimo: {self.umbral_minimo}")
+        logger.info(f" Máximo reintentos: {self.max_reintentos}")
+        logger.info(" Esperando mensajes de 'respuestas-exitosas'...")
         logger.info("=" * 80)
         
         try:
@@ -199,7 +199,7 @@ class PuntuacionConsumer:
                     self._mostrar_metricas()
                     
         except KeyboardInterrupt:
-            logger.info("\n⚠️ Interrumpido por el usuario")
+            logger.info("\n Interrumpido por el usuario")
         finally:
             self._mostrar_metricas()
             self.consumer.close()
@@ -208,12 +208,12 @@ class PuntuacionConsumer:
     def _mostrar_metricas(self):
         """Muestra métricas del servicio"""
         logger.info("=" * 80)
-        logger.info("📊 MÉTRICAS DEL CONSUMER DE PUNTUACIÓN")
+        logger.info(" MÉTRICAS DEL CONSUMER DE PUNTUACIÓN")
         logger.info("=" * 80)
         logger.info(f"Mensajes procesados: {self.mensajes_procesados}")
-        logger.info(f"✅ Validadas: {self.respuestas_validadas}")
-        logger.info(f"🔄 Reintentos enviados: {self.reintentos_enviados}")
-        logger.info(f"❌ Descartadas: {self.respuestas_rechazadas}")
+        logger.info(f" Validadas: {self.respuestas_validadas}")
+        logger.info(f" Reintentos enviados: {self.reintentos_enviados}")
+        logger.info(f" Descartadas: {self.respuestas_rechazadas}")
         
         if self.mensajes_procesados > 0:
             tasa_validacion = (self.respuestas_validadas / self.mensajes_procesados) * 100
