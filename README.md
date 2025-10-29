@@ -176,7 +176,7 @@ Sistema distribuido que procesa preguntas del dataset Yahoo! Answers, genera res
 
 1. **Clonar repositorio**
 ```bash
-git clone [URL_REPOSITORIO]
+git clone https://github.com/NicolasAlvarado19/Tarea2SistemasDistribuidos
 cd Tarea2SistemasDistribuidos
 ```
 
