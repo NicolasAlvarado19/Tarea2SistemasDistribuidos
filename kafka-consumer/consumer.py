@@ -143,7 +143,7 @@ Respuesta:"""
                 'respuesta_original': respuesta_original,
                 'respuesta_llm': resultado['respuesta'],
                 'timestamp': time.time(),
-                'intentos': intentos + 1
+                'intentos_realizados': intentos + 1
             }
             
             self.producer.send('respuestas-exitosas', value=mensaje_exitoso)

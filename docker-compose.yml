@@ -68,6 +68,11 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     networks:
       - tarea2-net
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
     restart: unless-stopped
 
   kafka-ui:
@@ -138,15 +143,17 @@ services:
     build: ./kafka-consumer
     container_name: kafka-consumer-tarea2
     depends_on:
-      - kafka
-      - puntuacion
+      kafka:
+        condition: service_healthy
+      puntuacion:
+        condition: service_started
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PUNTUACION_URL=http://puntuacion:8002
       - MAX_REINTENTOS=${MAX_REINTENTOS}
       - BACKOFF_BASE=${BACKOFF_BASE}
-      - GEMINI_API_KEY=AIzaSyCQKhjTFe0K33Ikd1IYSx4WrCgqNT1Re60
-      - GEMINI_MODEL=gemini-flash-latest
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL}
     networks:
       - tarea2-net
     restart: unless-stopped
@@ -155,28 +162,54 @@ services:
     build: ./reintentador
     container_name: reintentador-tarea2
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - MAX_REINTENTOS=${MAX_REINTENTOS}
+      - BACKOFF_BASE=${BACKOFF_BASE}
     networks:
       - tarea2-net
     restart: unless-stopped
 
-    
-  puntuacion-consumer:
-    build: ./puntuacion-consumer
-    container_name: puntuacion-consumer-tarea2
+  # ==================== APACHE FLINK (NUEVO) ====================
+  flink-job:
+    build: ./flink-job
+    container_name: flink-quality-processor
     depends_on:
-      - kafka
-      - puntuacion
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
+      # Kafka
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - PUNTUACION_URL=http://puntuacion:8002
-      - UMBRAL_SCORE=0.6
-      - MAX_REINTENTOS_SCORE=2
+      
+      # Configuración de Calidad
+      - UMBRAL_SCORE=${UMBRAL_SCORE}
+      - MAX_REINTENTOS=${MAX_REINTENTOS_FLINK}
+      
+      # PostgreSQL
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # Flink
+      - FLINK_PARALLELISM=${FLINK_PARALLELISM}
+      - FLINK_CHECKPOINT_INTERVAL=${FLINK_CHECKPOINT_INTERVAL}
+    volumes:
+      - flink-checkpoints:/tmp/flink-checkpoints
     networks:
       - tarea2-net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
 
   generador-trafico:
     build:
@@ -190,16 +223,17 @@ services:
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=tarea2_db
-      - POSTGRES_USER=tarea2_user
-      - POSTGRES_PASSWORD=tarea2_password
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - CACHE_URL=http://cache:8001
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - TASA_CONSULTAS=${TASA_CONSULTAS}
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - tarea2-net
     restart: always
@@ -211,3 +245,4 @@ networks:
 
 volumes:
   postgres-data:
+  flink-checkpoints:
